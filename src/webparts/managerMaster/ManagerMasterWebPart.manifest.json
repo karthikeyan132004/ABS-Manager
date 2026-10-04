@@ -1,0 +1,53 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "c1cfff08-1993-4897-b8da-9666516b9e94",
+  "alias": "ManagerMasterWebPart",
+  "componentType": "WebPart",
+
+  // The "*" signifies that the version should be taken from the package.json
+  "version": "*",
+  "manifestVersion": 2,
+
+  // If true, the component can only be installed on sites where Custom Script is allowed.
+  // Components that allow authors to embed arbitrary script code should set this to true.
+  // https://support.office.com/en-us/article/Turn-scripting-capabilities-on-or-off-1f2c515f-5d7e-448a-9fd7-835da935584f
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Advanced
+    "group": { "default": "Advanced" },
+    "title": { "default": "Manager Dashboard" },
+    "description": { "default": "KPI tiles and grids over the CRM lists on this site." },
+    "officeFabricIconFontName": "BIDashboard",
+    "properties": {
+      "title": "Manager Dashboard",
+      "itemLimit": 500,
+      "probabilityThreshold": 70,
+
+      "quotationListTitle": "Quotation",
+      "quotationStatusField": "QuotStatus",
+      "quotationAmountField": "field_4",
+      "quotationRemarksField": "Description",
+      "quotationLeadField": "SalesLead",
+      "leadStageField": "CustomerName",
+
+      "leadsListTitle": "Sales Lead",
+      "leadsColumns": "",
+      "leadsDateField": "field_12",
+      "leadsStatusField": "field_8",
+      "leadsProbabilityField": "",
+
+      "activityListTitle": "Activity",
+      "activityColumns": "",
+      "activityDateField": "",
+      "activityStatusField": "",
+
+      "projectsListTitle": "Project Master",
+      "projectsColumns": "",
+      "projectsDateField": "",
+      "projectsStatusField": ""
+    }
+  }]
+}

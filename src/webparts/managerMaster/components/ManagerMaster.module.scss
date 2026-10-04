@@ -1,0 +1,746 @@
+// Brand rail. Fixed dark red in both themes: it is brand chrome, not data ink.
+$brand-900: #4f0d16;
+$brand-800: #6d1423;
+$brand-700: #8c1b2e;
+$brand-ink: #ffffff;
+
+// The one data colour, validated against both the light (#ffffff) and dark
+// (#1f1f1f) chart surfaces: lightness band, chroma floor and >= 3:1 contrast all
+// pass in both, so the bars need no theme switch.
+$data-red: #c2344a;
+
+.managerMaster {
+  color: "[theme:bodyText, default: #323130]";
+  color: var(--bodyText);
+  font-size: 14px;
+}
+
+.shell {
+  display: flex;
+  align-items: stretch;
+  min-height: 560px;
+  border: 1px solid "[theme:neutralLight, default: #edebe9]";
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: "[theme:white, default: #ffffff]";
+}
+
+/* ---------------------------------------------------------------- side rail */
+
+.sideNav {
+  flex: 0 0 236px;
+  width: 236px;
+  padding: 16px 12px 20px;
+  background: linear-gradient(180deg, $brand-800 0%, $brand-900 100%);
+  color: $brand-ink;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sideNavCollapsed {
+  flex-basis: 68px;
+  width: 68px;
+  padding: 16px 8px 20px;
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.16);
+  font-size: 16px;
+}
+
+.brandText {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railToggle {
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: transparent;
+  color: $brand-ink;
+  font-size: 12px;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navGroupLabel {
+  padding: 0 8px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-family: inherit;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.86);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: $brand-ink;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.75);
+    outline-offset: 1px;
+  }
+}
+
+.navItemActive {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: $brand-900;
+  font-weight: 600;
+
+  &:hover {
+    background-color: #ffffff;
+    color: $brand-900;
+  }
+}
+
+.navIcon {
+  flex: 0 0 16px;
+  font-size: 16px;
+}
+
+.navLabel {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navBadge {
+  flex: 0 0 auto;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.18);
+  color: inherit;
+}
+
+.navItemActive .navBadge {
+  background-color: rgba(79, 13, 22, 0.12);
+}
+
+/* ------------------------------------------------------------- main column */
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: "[theme:neutralLighterAlt, default: #faf9f8]";
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background-color: "[theme:white, default: #ffffff]";
+  border-bottom: 1px solid "[theme:neutralLight, default: #edebe9]";
+}
+
+.topBarTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.topBarMeta {
+  opacity: 0.65;
+}
+
+.topBarPersona {
+  flex: 0 0 auto;
+}
+
+.content {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 18px 20px 24px;
+  overflow-x: auto;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pageHead {
+  margin-bottom: 8px;
+}
+
+.pageTitle {
+  font-weight: 600;
+}
+
+.pageSubtitle {
+  opacity: 0.7;
+}
+
+.spinner {
+  padding: 3em 0;
+}
+
+.messageBar {
+  margin-bottom: 12px;
+}
+
+.emptyNote {
+  display: block;
+  padding: 18px 4px;
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------- cards */
+
+.kpiRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.kpiCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 168px;
+  min-width: 156px;
+  max-width: 260px;
+  padding: 12px 14px;
+  text-align: left;
+  font-family: inherit;
+  border: 1px solid "[theme:neutralLight, default: #edebe9]";
+  border-radius: 8px;
+  background-color: "[theme:white, default: #ffffff]";
+  color: "[theme:bodyText, default: #323130]";
+}
+
+.kpiCardInteractive {
+  cursor: pointer;
+
+  &:hover {
+    border-color: $brand-700;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $brand-700;
+    outline-offset: 1px;
+  }
+}
+
+.kpiCardActive {
+  border-color: $brand-700;
+  box-shadow: inset 0 0 0 1px $brand-700;
+}
+
+.kpiIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background-color: "[theme:neutralLighter, default: #f3f2f1]";
+}
+
+.kpiIcon {
+  font-size: 16px;
+}
+
+.kpiBody {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.kpiValue {
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.kpiLabel {
+  font-size: 12px;
+  line-height: 1.3;
+  opacity: 0.9;
+}
+
+.kpiHint {
+  font-size: 11px;
+  opacity: 0.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Tone is carried by the icon chip, with the label always present beside it, so
+// colour never has to be read on its own.
+.kpiNeutral .kpiIconWrap {
+  color: "[theme:themePrimary, default: #0078d4]";
+}
+
+.kpiBrand .kpiIconWrap {
+  background-color: rgba(194, 52, 74, 0.14);
+  color: $brand-700;
+}
+
+.kpiSuccess .kpiIconWrap {
+  background-color: rgba(12, 163, 12, 0.14);
+  color: #0ca30c;
+}
+
+.kpiWarning .kpiIconWrap {
+  background-color: rgba(250, 178, 25, 0.18);
+  color: #8a6100;
+}
+
+.kpiDanger .kpiIconWrap {
+  background-color: rgba(208, 59, 59, 0.14);
+  color: #d03b3b;
+}
+
+/* ------------------------------------------------------------ panels & grid */
+
+.panelCard {
+  padding: 14px 16px 16px;
+  border: 1px solid "[theme:neutralLight, default: #edebe9]";
+  border-radius: 8px;
+  background-color: "[theme:white, default: #ffffff]";
+  margin-bottom: 16px;
+}
+
+.panelCardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panelCardTitle {
+  font-weight: 600;
+}
+
+.panelCardMeta {
+  opacity: 0.65;
+}
+
+.funnelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 16px;
+}
+
+/* --------------------------------------------------------------- the funnel */
+
+.funnel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.funnelRow {
+  margin: 0;
+}
+
+.funnelRowInner {
+  display: grid;
+  grid-template-columns: minmax(104px, 190px) 1fr 44px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 5px;
+  background-color: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+}
+
+.funnelRowButton {
+  cursor: pointer;
+
+  &:hover {
+    background-color: "[theme:neutralLighter, default: #f3f2f1]";
+  }
+
+  &:focus-visible {
+    outline: 2px solid $brand-700;
+    outline-offset: 1px;
+  }
+}
+
+.funnelLabel {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.funnelTrack {
+  display: block;
+  height: 13px;
+  border-radius: 3px;
+  background-color: "[theme:neutralLighter, default: #f3f2f1]";
+  overflow: hidden;
+}
+
+// Anchored to the baseline at the left, 4px rounded data-end at the right.
+.funnelBar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background-color: $data-red;
+}
+
+.funnelValue {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ----------------------------------------------------------- tables & tools */
+
+.toolbar {
+  margin-bottom: 12px;
+}
+
+.searchBox {
+  min-width: 220px;
+}
+
+.statusFilter {
+  min-width: 180px;
+}
+
+.inlineToggle {
+  margin: 0;
+}
+
+.resultCount {
+  opacity: 0.7;
+}
+
+.statusPill {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px 9px;
+  border-radius: 11px;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background-color: "[theme:neutralLighter, default: #f3f2f1]";
+}
+
+.panelHint {
+  margin-top: 16px;
+  opacity: 0.7;
+}
+
+.fieldTable {
+  width: 100%;
+  margin-top: 1em;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th,
+  td {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid "[theme:neutralLight, default: #edebe9]";
+    vertical-align: top;
+  }
+
+  th {
+    font-weight: 600;
+  }
+}
+
+.tab {
+  padding-top: 4px;
+}
+
+/* ------------------------------------------------------------- narrow pages */
+
+@media (max-width: 740px) {
+  .shell {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .sideNav,
+  .sideNavCollapsed {
+    flex: 0 0 auto;
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .brandRow {
+    width: 100%;
+    padding-bottom: 8px;
+  }
+
+  .railToggle {
+    display: none;
+  }
+
+  .navGroup {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .navGroupLabel {
+    display: none;
+  }
+
+  .navItem {
+    width: auto;
+  }
+
+  .content {
+    padding: 14px 12px 20px;
+  }
+
+  .funnelGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------------- stage chips */
+
+.sectionLabel {
+  margin: 4px 0 10px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.chipRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 144px;
+  min-width: 132px;
+  max-width: 200px;
+  padding: 9px 11px 8px;
+  border: 1px solid "[theme:neutralLight, default: #edebe9]";
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  background-color: "[theme:white, default: #ffffff]";
+  color: "[theme:bodyText, default: #323130]";
+
+  &:hover {
+    border-color: $brand-700;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $brand-700;
+    outline-offset: 1px;
+  }
+}
+
+.chipActive {
+  border-color: $brand-700;
+  box-shadow: inset 0 0 0 1px $brand-700;
+  background-color: rgba(194, 52, 74, 0.06);
+}
+
+.chipEmpty {
+  opacity: 0.6;
+}
+
+.chipTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chipNumber {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.chipCount {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.chipLabel {
+  font-size: 11.5px;
+  line-height: 1.3;
+  min-height: 2.6em;
+  opacity: 0.9;
+}
+
+.chipTrack {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background-color: "[theme:neutralLighter, default: #f3f2f1]";
+  overflow: hidden;
+}
+
+.chipBar {
+  display: block;
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  background-color: $data-red;
+}
+
+/* ------------------------------------------------------- grid row richness */
+
+.grid {
+  :global(.ms-DetailsRow) {
+    cursor: pointer;
+  }
+}
+
+.gridRow:hover {
+  background-color: "[theme:neutralLighter, default: #f3f2f1]";
+}
+
+.statusCell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.progressWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.progressTrack {
+  display: inline-block;
+  width: 54px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: "[theme:neutralLighter, default: #f3f2f1]";
+  overflow: hidden;
+}
+
+.progressBar {
+  display: block;
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  background-color: $data-red;
+}
+
+.progressText {
+  font-size: 10.5px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.staleTag {
+  padding: 1px 7px;
+  border-radius: 9px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background-color: rgba(250, 178, 25, 0.22);
+  color: #7a5500;
+}
+
+.jumpButton {
+  min-width: 32px;
+  padding: 0 6px;
+}
+
+/* -------------------------------------------------------------- empty state */
+
+.emptyState {
+  padding: 30px 10px 34px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+.unlinkedTag {
+  font-size: 11.5px;
+  opacity: 0.5;
+  font-style: italic;
+}

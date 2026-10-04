@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "useGulp": false,
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.23.1",
+    "sdksVersions": {},
+    "version": "1.23.2",
+    "libraryName": "manager-master",
+    "libraryId": "43cc28d2-2aad-482a-bc71-6f53b3fded8a",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "Manager Master",
+    "solutionShortDescription": "Manager Master description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

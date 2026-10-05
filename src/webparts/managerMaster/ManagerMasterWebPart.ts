@@ -25,6 +25,7 @@ export interface IManagerMasterWebPartProps {
   quotationStatusField: string;
   quotationAmountField: string;
   quotationRemarksField: string;
+  quotationPageUrl: string;
   quotationLeadField: string;
   leadStageField: string;
 
@@ -62,6 +63,7 @@ export default class ManagerMasterWebPart extends BaseClientSideWebPart<IManager
         environmentMessage: this._environmentMessage,
         userDisplayName: this.context.pageContext.user.displayName,
         quotation: this._buildQuotationConfig(),
+        quotationPageUrl: this.properties.quotationPageUrl ?? '',
         leadSync: this._buildLeadSyncConfig(),
         tabs: this._buildTabs(),
         itemLimit: this.properties.itemLimit ?? 500,
@@ -227,6 +229,11 @@ export default class ManagerMasterWebPart extends BaseClientSideWebPart<IManager
                 PropertyPaneTextField('quotationRemarksField', {
                   label: strings.RemarksFieldLabel,
                   description: strings.OptionalFieldDescription
+                }),
+                PropertyPaneTextField('quotationPageUrl', {
+                  label: strings.QuotationPageUrlFieldLabel,
+                  description: strings.QuotationPageUrlFieldDescription,
+                  multiline: true
                 }),
                 PropertyPaneTextField('quotationLeadField', {
                   label: strings.LeadLinkFieldLabel,

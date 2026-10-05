@@ -30,6 +30,7 @@
       "quotationStatusField": "QuotStatus",
       "quotationAmountField": "field_4",
       "quotationRemarksField": "Description",
+      "quotationPageUrl": "https://abscaffoldengineering.sharepoint.com/sites/abscaffold_dev/CRM/SitePages/Quotation_Edit_view.aspx?quotationId={Id}",
       "quotationLeadField": "SalesLead",
       "leadStageField": "CustomerName",
 

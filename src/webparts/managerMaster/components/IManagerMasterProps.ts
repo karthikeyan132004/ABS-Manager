@@ -7,6 +7,11 @@ export interface IManagerMasterProps {
   title: string;
   /** The Customer Quotation pipeline, shown as the default tab. */
   quotation: IQuotationConfig;
+  /**
+   * Page URL of the Quotation web part, with {InternalName} placeholders.
+   * Empty hides the link column on the quotation board.
+   */
+  quotationPageUrl: string;
   /** Mirrors sales stages onto the linked Sales Lead record. */
   leadSync: ILeadSyncConfig;
   isDarkTheme: boolean;

@@ -2,7 +2,9 @@ import { IFieldInfo } from '@pnp/sp/fields';
 import { IList } from '@pnp/sp/lists';
 import { getSP } from '../../../pnpConfig';
 import { ALL_STATUSES, SALES_STATUSES } from '../../../statuses';
-import { getSiteListTitles } from './DashboardService';
+import { IDashboardField, ListItem } from '../models/IDashboardModels';
+import { getSiteListTitles, isUsable, toDashboardField } from './DashboardService';
+import { isExpandable } from './fieldValue';
 
 /** A Quotation list item. Id and Title are always present. */
 export interface IQuotationItem {
@@ -57,6 +59,21 @@ export interface IQuotationLoad {
   missingFields: string[];
   /** Internal name -> TypeAsString, used to coerce values before saving. */
   fieldTypes: Record<string, string>;
+  /**
+   * The list's own DispForm.aspx, server-relative. Appending "?ID=<item id>"
+   * gives the SharePoint form for one quotation, which is where the full
+   * record is read and edited.
+   */
+  displayFormUrl: string;
+  /** The list's own EditForm.aspx, server-relative. */
+  editFormUrl: string;
+  /** Every real column on the list, in list order, for the detail panel. */
+  fields: IDashboardField[];
+  /**
+   * Lookup internal name -> the column that lookup actually displays. A list
+   * keyed on something other than Title would otherwise expand to a bare id.
+   */
+  lookupDisplayFields: Record<string, string>;
   /** Fatal load error. When set, nothing else on the object is meaningful. */
   error?: string;
   /** Lists that do exist on this web, offered when the configured one does not. */
@@ -74,7 +91,11 @@ export const EMPTY_QUOTATION_LOAD: IQuotationLoad = {
   leadLabelById: {},
   leadStageIdByLabel: {},
   missingFields: [],
-  fieldTypes: {}
+  fieldTypes: {},
+  displayFormUrl: '',
+  editFormUrl: '',
+  fields: [],
+  lookupDisplayFields: {}
 };
 
 function getList(config: IQuotationConfig): IList {
@@ -273,8 +294,15 @@ export async function loadQuotations(
     const list: IList = getList(config);
 
     const fields: IFieldInfo[] = await list.fields
-      .select('InternalName', 'TypeAsString')
+      .select('InternalName', 'Title', 'TypeAsString', 'Hidden', 'ReadOnlyField')
       .filter('Hidden eq false')();
+
+    // SharePoint already knows where its own forms live, so the link to a
+    // quotation never has to be configured or guessed at.
+    const forms: { DefaultDisplayFormUrl?: string; DefaultEditFormUrl?: string } =
+      await list.select('DefaultDisplayFormUrl', 'DefaultEditFormUrl')();
+
+    const lookupDisplayFields: Record<string, string> = await loadLookupDisplayFields(list);
 
     const fieldTypes: Record<string, string> = {};
     for (const field of fields) {
@@ -316,7 +344,11 @@ export async function loadQuotations(
       statusIdByLabel: domain.idByLabel,
       statusLabelById: domain.labelById,
       missingFields,
-      fieldTypes
+      fieldTypes,
+      displayFormUrl: forms.DefaultDisplayFormUrl ?? '',
+      editFormUrl: forms.DefaultEditFormUrl ?? '',
+      fields: fields.filter(isUsable).map(toDashboardField),
+      lookupDisplayFields
     };
   } catch (e) {
     const message: string = e instanceof Error ? e.message : String(e);
@@ -562,4 +594,140 @@ export async function syncLeadStage(
     .update({ [`${sync.leadStageField.trim()}Id`]: stageId });
 
   return { kind: 'synced', leadLabel: load.leadLabelById[leadId] ?? `Lead ${leadId}` };
+}
+
+/**
+ * Builds the link to one quotation.
+ *
+ * By default this is the list's own form, e.g.
+ *   /sites/x/CRM/Lists/Quotation/DispForm.aspx?ID=4
+ * built from the DefaultDisplayFormUrl SharePoint reports for the list, so it
+ * follows the list wherever it lives and needs no configuration.
+ *
+ * A non-empty template overrides that, for sending the manager to a custom
+ * quotation page instead. It carries "{InternalName}" placeholders filled from
+ * the item, e.g. ".../Quotation.aspx?customer={Customer}&project={Project}";
+ * "{Id}" is the item id. An override whose placeholders cannot all be resolved
+ * returns undefined, so the grid shows nothing rather than a link landing on an
+ * empty quotation.
+ */
+export function buildQuotationLink(
+  template: string,
+  item: IQuotationItem,
+  formUrl: string
+): string | undefined {
+  const trimmed: string = template.trim();
+
+  if (trimmed === '') {
+    return formUrl === '' ? undefined : `${formUrl}?ID=${item.Id}`;
+  }
+
+  let unresolved: boolean = false;
+
+  const url: string = trimmed.replace(/\{([^{}]+)\}/g, (_match: string, name: string): string => {
+    const value: string = readTemplateValue(item, name.trim());
+
+    if (value === '') {
+      unresolved = true;
+      return '';
+    }
+
+    return encodeURIComponent(value);
+  });
+
+  return unresolved ? undefined : url;
+}
+
+/** One placeholder's value: the column itself, else its lookup id, else "". */
+function readTemplateValue(item: IQuotationItem, internalName: string): string {
+  if (internalName === '') {
+    return '';
+  }
+
+  // "Id" is not a list column but is the obvious key for a per-item page.
+  if (internalName === 'Id') {
+    return String(item.Id);
+  }
+
+  const direct: string = readStatusValue(item, internalName);
+  if (direct !== '') {
+    return direct;
+  }
+
+  const lookupId: unknown = item[`${internalName}Id`];
+  if (lookupId === null || lookupId === undefined || lookupId === '') {
+    return '';
+  }
+
+  return Array.isArray(lookupId) ? lookupId.map(String).join(',') : String(lookupId);
+}
+
+/**
+ * The column each lookup on the list actually displays.
+ *
+ * Asked for separately and filtered to lookups, because LookupField only exists
+ * on lookup fields and selecting it across the whole field collection is not
+ * safe. A list keyed on anything other than Title - which is common once the
+ * primary column has been renamed - expands to a null Title and the detail
+ * panel would print the raw id instead of the name.
+ */
+async function loadLookupDisplayFields(list: IList): Promise<Record<string, string>> {
+  try {
+    const lookups: ILookupFieldInfo[] = await list.fields
+      .select('InternalName', 'LookupField')
+      .filter("TypeAsString eq 'Lookup' or TypeAsString eq 'LookupMulti'")() as ILookupFieldInfo[];
+
+    const byName: Record<string, string> = {};
+    for (const field of lookups) {
+      if (field.LookupField !== undefined && field.LookupField !== '') {
+        byName[field.InternalName] = field.LookupField;
+      }
+    }
+
+    return byName;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Re-reads one quotation with its lookups and people expanded.
+ *
+ * The grid loads items with $select=*, which brings every column back but
+ * leaves a lookup as a bare "<name>Id". That is fine for a grid of numbers and
+ * statuses, and wrong for a detail panel, where the customer and the project
+ * have to read as names. One targeted request per opened item is cheaper than
+ * expanding every lookup across the whole list on load.
+ *
+ * Each lookup is projected on the column it really displays rather than on
+ * Title, so a reference list keyed on its own column still reads as a name.
+ */
+export async function loadQuotationDetail(
+  config: IQuotationConfig,
+  id: number,
+  fields: IDashboardField[],
+  lookupDisplayFields: Record<string, string>
+): Promise<ListItem> {
+  const selects: string[] = ['Id'];
+  const expands: string[] = [];
+
+  for (const field of fields) {
+    if (!isExpandable(field)) {
+      selects.push(field.internalName);
+      continue;
+    }
+
+    // A person field is always shown by Title; a lookup by whatever its own
+    // list displays. Title is projected too so the formatter can fall back.
+    const display: string | undefined = lookupDisplayFields[field.internalName];
+    selects.push(`${field.internalName}/Id`, `${field.internalName}/Title`);
+    if (display !== undefined && display !== 'Title') {
+      selects.push(`${field.internalName}/${display}`);
+    }
+    expands.push(field.internalName);
+  }
+
+  return getList(config).items.getById(id)
+    .select(...selects)
+    .expand(...expands)();
 }

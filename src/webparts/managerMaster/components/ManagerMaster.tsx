@@ -1,6 +1,11 @@
 import * as React from 'react';
 import { MessageBar, MessageBarType, Persona, PersonaSize, Spinner, SpinnerSize, Text } from '@fluentui/react';
 import styles from './ManagerMaster.module.scss';
+import {
+  EMPTY_GENERATED_INDEX,
+  IGeneratedQuotationIndex,
+  loadGeneratedQuotations
+} from '../services/GeneratedQuotationService';
 import type { IManagerMasterProps } from './IManagerMasterProps';
 import SideNav, { INavItem } from './SideNav';
 import OverviewPage from './OverviewPage';
@@ -27,11 +32,13 @@ const EMPTY_TAB: IListTabData = { columns: [], allFields: [], items: [] };
 
 const ManagerMaster: React.FunctionComponent<IManagerMasterProps> = (props: IManagerMasterProps) => {
   const {
-    title, environmentMessage, userDisplayName, tabs, itemLimit, probabilityThreshold, quotation, leadSync
+    context, title, environmentMessage, userDisplayName, tabs, itemLimit, probabilityThreshold,
+    quotation, quotationPageUrl, leadSync
   } = props;
 
   const [listData, setListData] = React.useState<Record<string, IListTabData>>({});
   const [quotationLoad, setQuotationLoad] = React.useState<IQuotationLoad>(EMPTY_QUOTATION_LOAD);
+  const [generated, setGenerated] = React.useState<IGeneratedQuotationIndex>(EMPTY_GENERATED_INDEX);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [selectedKey, setSelectedKey] = React.useState<string>(OVERVIEW_KEY);
   const [focusStatus, setFocusStatus] = React.useState<string | undefined>(undefined);
@@ -57,10 +64,13 @@ const ManagerMaster: React.FunctionComponent<IManagerMasterProps> = (props: IMan
     const quotationConfig: IQuotationConfig = JSON.parse(quotationSignature) as IQuotationConfig;
     const syncConfig: ILeadSyncConfig = JSON.parse(leadSyncSignature) as ILeadSyncConfig;
 
-    const [quotationResult, listResults] = await Promise.all([
+    const [quotationResult, generatedResult, listResults] = await Promise.all([
       quotationConfig.listTitle.trim() === ''
         ? Promise.resolve(EMPTY_QUOTATION_LOAD)
         : loadQuotations(quotationConfig, itemLimit, syncConfig),
+      // The workbooks absquot generates. A missing library is reported on the
+      // result, so the dashboard still loads without one.
+      loadGeneratedQuotations(itemLimit),
       Promise.all(
         configuredTabs.map((tab: IListTabConfig): Promise<[string, IListTabData]> =>
           loadListTab(tab, itemLimit).then((result: IListTabData): [string, IListTabData] => [tab.key, result]))
@@ -77,6 +87,7 @@ const ManagerMaster: React.FunctionComponent<IManagerMasterProps> = (props: IMan
     }
 
     setQuotationLoad(quotationResult);
+    setGenerated(generatedResult);
     setListData(nextListData);
   }, [tabSignature, quotationSignature, leadSyncSignature, itemLimit]);
 
@@ -163,6 +174,9 @@ const ManagerMaster: React.FunctionComponent<IManagerMasterProps> = (props: IMan
       return (
         <StageBoard
           config={quotation}
+          quotationPageUrl={quotationPageUrl}
+          generated={generated}
+          webUrl={context.pageContext.web.absoluteUrl}
           leadSync={leadSync}
           load={quotationLoad}
           stages={isSales ? SALES_STATUSES : QUOTATION_STATUSES}

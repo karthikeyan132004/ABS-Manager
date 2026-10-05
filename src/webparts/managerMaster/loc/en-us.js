@@ -20,6 +20,8 @@ define([], function() {
     "QuotationStatusFieldDescription": "Internal name of the 22-value status choice column. The pipeline order comes from src/statuses.ts.",
     "AmountFieldLabel": "Amount field",
     "RemarksFieldLabel": "Remarks field",
+    "QuotationPageUrlFieldLabel": "Quotation app page URL",
+    "QuotationPageUrlFieldDescription": "Page holding the ABS Quotation Management web part. It is shown inside the quotation panel. That page has no deep link, so it opens on its own form. Use {InternalName} for any column on the list, and {Id} for the item id, if it ever takes one. Leave empty to hide the panel section.",
     "OptionalFieldDescription": "Internal name. Leave empty to hide this field from the grid and the edit panel.",
     "LeadLinkFieldLabel": "Sales Lead link field",
     "LeadLinkFieldDescription": "Internal name of the lookup on Quotation pointing at Sales Lead. Leave empty to turn the lead sync off.",

@@ -23,7 +23,7 @@ const AUDIT_FIELDS: Set<string> = new Set(['ID', 'Id', 'Created', 'Modified', 'A
 
 const DEFAULT_AUTO_COLUMNS: number = 7;
 
-function toDashboardField(field: IFieldInfo): IDashboardField {
+export function toDashboardField(field: IFieldInfo): IDashboardField {
   return {
     internalName: field.InternalName,
     title: field.Title !== '' ? field.Title : field.InternalName,
@@ -43,7 +43,7 @@ export function parseNameList(value: string | undefined): string[] {
     .filter((name: string): boolean => name.length > 0);
 }
 
-function isUsable(field: IFieldInfo): boolean {
+export function isUsable(field: IFieldInfo): boolean {
   if (field.Hidden === true) {
     return false;
   }
@@ -71,7 +71,7 @@ function autoColumns(fields: IDashboardField[]): IDashboardField[] {
  * Builds $select and $expand so lookup and person columns come back with a
  * display value instead of just an id.
  */
-function buildQuery(fields: IDashboardField[]): { selects: string[]; expands: string[] } {
+export function buildQuery(fields: IDashboardField[]): { selects: string[]; expands: string[] } {
   const selects: string[] = ['Id'];
   const expands: string[] = [];
 

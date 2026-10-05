@@ -23,15 +23,33 @@ import {
   Toggle
 } from '@fluentui/react';
 import styles from './ManagerMaster.module.scss';
+import { IDashboardField, ListItem } from '../models/IDashboardModels';
+import { formatFieldValue } from '../services/fieldValue';
+import {
+  IGeneratedQuotation,
+  IGeneratedQuotationIndex,
+  buildExcelOnlineUrl,
+  findGeneratedQuotation
+} from '../services/GeneratedQuotationService';
 import KpiCard from './KpiCard';
 import StageChips, { IStageChip } from './StageChips';
-import { ALL_STATUSES, FINAL_STATUSES, LOCK_FINAL_STATUSES, displayStatus, isLocked, stepStatus } from '../../../statuses';
+import {
+  ALL_STATUSES,
+  FINAL_STATUSES,
+  LOCK_FINAL_STATUSES,
+  QUOTATION_STATUSES,
+  displayStatus,
+  isLocked,
+  stepStatus
+} from '../../../statuses';
 import {
   ILeadSyncConfig,
   IQuotationConfig,
   IQuotationItem,
   IQuotationLoad,
+  buildQuotationLink,
   buildStatusUpdate,
+  loadQuotationDetail,
   coerceFieldValue,
   isInvalidNumber,
   readStatusValue,
@@ -48,6 +66,12 @@ import {
 
 export interface IStageBoardProps {
   config: IQuotationConfig;
+  /** Quotation web part page URL with {InternalName} placeholders. Empty hides the column. */
+  quotationPageUrl: string;
+  /** The workbooks absquot has generated, matched to rows by number or customer+project. */
+  generated: IGeneratedQuotationIndex;
+  /** Absolute URL of this web, for building the Excel Online link. */
+  webUrl: string;
   leadSync: ILeadSyncConfig;
   load: IQuotationLoad;
   /** The statuses this board owns, in pipeline order. */
@@ -69,7 +93,10 @@ interface IDraft {
 const EMPTY_DRAFT: IDraft = { status: '', amount: '', remarks: '' };
 
 const StageBoard: React.FunctionComponent<IStageBoardProps> = (props: IStageBoardProps) => {
-  const { config, leadSync, load, stages, heading, description, onReload, focusStatus, onFocusHandled } = props;
+  const {
+    config, quotationPageUrl, generated, webUrl, leadSync, load, stages, heading, description,
+    onReload, focusStatus, onFocusHandled
+  } = props;
 
   const syncEnabled: boolean = isLeadSyncConfigured(leadSync);
 
@@ -82,6 +109,8 @@ const StageBoard: React.FunctionComponent<IStageBoardProps> = (props: IStageBoar
   const [busyId, setBusyId] = React.useState<number | undefined>(undefined);
   const [message, setMessage] = React.useState<string>('');
   const [error, setError] = React.useState<string>('');
+  const [detail, setDetail] = React.useState<ListItem | undefined>(undefined);
+  const [detailBusy, setDetailBusy] = React.useState<boolean>(false);
 
   const statusField: string = config.statusField.trim();
   const amountField: string = config.amountField.trim();
@@ -91,6 +120,11 @@ const StageBoard: React.FunctionComponent<IStageBoardProps> = (props: IStageBoar
   // setting hides the field instead of showing a permanently empty column.
   const hasAmount: boolean = amountField !== '' && load.fieldTypes[amountField] !== undefined;
   const hasRemarks: boolean = remarksField !== '' && load.fieldTypes[remarksField] !== undefined;
+
+  // Only the quotation board carries the link; a sales-stage row has no quotation yet.
+  // The list's own DispForm is enough on its own, so no configuration is needed.
+  const hasQuoteLink: boolean = (quotationPageUrl.trim() !== '' || load.displayFormUrl !== '')
+    && stages.some((stage: string): boolean => QUOTATION_STATUSES.indexOf(stage) >= 0);
 
   const mounted: React.MutableRefObject<boolean> = React.useRef<boolean>(true);
   React.useEffect(() => {
@@ -181,9 +215,74 @@ const StageBoard: React.FunctionComponent<IStageBoardProps> = (props: IStageBoar
       amount: hasAmount ? String(item[amountField] ?? '') : '',
       remarks: hasRemarks ? String(item[remarksField] ?? '') : ''
     });
+
+    // The grid's copy has bare lookup ids, so re-read this one with the
+    // lookups expanded. A failure leaves the editable fields usable.
+    setDetail(undefined);
+    setDetailBusy(true);
+
+    const finish = (full?: ListItem): void => {
+      if (mounted.current) {
+        setDetail(full);
+        setDetailBusy(false);
+      }
+    };
+
+    loadQuotationDetail(config, item.Id, load.fields, load.lookupDisplayFields)
+      .then(finish)
+      .catch((): void => finish());
   };
 
+  /** Audit columns are shown apart from the quotation's own data. */
+  const AUDIT: string[] = ['ID', 'Id', 'Created', 'Modified', 'Author', 'Editor'];
+
+  /** The fields worth printing in the panel, minus the ones already editable. */
+  const detailFields: IDashboardField[] = React.useMemo(() => {
+    const editable: string[] = [statusField, amountField, remarksField, 'Title'];
+    return load.fields.filter((field: IDashboardField): boolean =>
+      editable.indexOf(field.internalName) < 0 && AUDIT.indexOf(field.internalName) < 0);
+  }, [load.fields, statusField, amountField, remarksField]);
+
   const amountInvalid: boolean = hasAmount && isInvalidNumber(draft.amount, amountField, load.fieldTypes);
+
+  const quoteHref: string | undefined = selected === undefined || load.displayFormUrl === ''
+    ? undefined
+    : `${load.displayFormUrl}?ID=${selected.Id}`;
+
+  /**
+   * The ABS Quotation Management page, opened on this quotation. That page
+   * reads a "quotationId" parameter, which the {Id} placeholder in the
+   * configured URL fills in.
+   */
+  const appHref: string | undefined = selected === undefined
+    ? undefined
+    : buildQuotationLink(quotationPageUrl, selected, '');
+
+  /**
+   * A column's value read by display title. absquot names the generated file
+   * from the form's Customer and Project, which are columns on this list, but
+   * a renamed column keeps its original internal name - so they are found by
+   * what they are called on screen rather than by internal name.
+   */
+  const valueByTitle = (item: ListItem, wanted: string): string => {
+    const field: IDashboardField | undefined = load.fields.find((candidate: IDashboardField): boolean =>
+      candidate.title.trim().toLowerCase() === wanted);
+    return field === undefined ? '' : formatFieldValue(field, item);
+  };
+
+  /** The workbook absquot generated for the open quotation, if there is one. */
+  const generatedFile: IGeneratedQuotation | undefined = React.useMemo(() => {
+    if (selected === undefined) {
+      return undefined;
+    }
+
+    // The detail read resolves lookups, so customer and project are names here
+    // rather than ids. Before it lands, the quotation number alone still matches.
+    const customer: string = detail === undefined ? '' : valueByTitle(detail, 'customer');
+    const project: string = detail === undefined ? '' : valueByTitle(detail, 'project');
+
+    return findGeneratedQuotation(generated, String(selected.Title ?? ''), customer, project);
+  }, [selected, detail, generated, load.fields]);
 
   const save = async (): Promise<void> => {
     if (selected === undefined || amountInvalid) {
@@ -342,6 +441,36 @@ const StageBoard: React.FunctionComponent<IStageBoardProps> = (props: IStageBoar
       }
     },
     {
+      key: 'quote',
+      name: 'Quotation',
+      minWidth: 120,
+      maxWidth: 180,
+      isResizable: true,
+      onRender: (item: IQuotationItem): React.ReactNode => {
+        // The quotation app when one is configured, else the list's own form.
+        const href: string | undefined = buildQuotationLink(
+          quotationPageUrl,
+          item,
+          load.displayFormUrl
+        );
+
+        if (href === undefined) {
+          return <span className={styles.unlinkedTag}>No quotation</span>;
+        }
+
+        return (
+          <Link
+            href={href}
+            target="_blank"
+            title="Open this quotation in SharePoint to view or edit it"
+            onClick={(ev: React.MouseEvent<HTMLElement>): void => ev.stopPropagation()}
+          >
+            {item.Title ?? `Item ${item.Id}`}
+          </Link>
+        );
+      }
+    },
+    {
       key: 'lead',
       name: 'Sales Lead',
       minWidth: 110,
@@ -410,6 +539,9 @@ const StageBoard: React.FunctionComponent<IStageBoardProps> = (props: IStageBoar
     }
     if (column.key === 'lead') {
       return syncEnabled;
+    }
+    if (column.key === 'quote') {
+      return hasQuoteLink;
     }
     return true;
   });
@@ -610,6 +742,87 @@ const StageBoard: React.FunctionComponent<IStageBoardProps> = (props: IStageBoar
             onChange={(_ev, newValue?: string): void => setDraft({ ...draft, remarks: newValue ?? '' })}
           />
         )}
+
+        {appHref !== undefined && (
+          <div className={styles.detailBlock}>
+            <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+              <Text variant="mediumPlus" className={styles.detailHeading}>Quotation app</Text>
+              <Link href={appHref} target="_blank">Open full page</Link>
+            </Stack>
+            <iframe
+              className={styles.appFrame}
+              src={appHref}
+              title="ABS Quotation Management"
+            />
+          </div>
+        )}
+
+        <div className={styles.detailBlock}>
+          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+            <Text variant="mediumPlus" className={styles.detailHeading}>Generated quotation</Text>
+            {generatedFile !== undefined && (
+              <Link href={buildExcelOnlineUrl(webUrl, generatedFile, 'default')} target="_blank">
+                Open in Excel
+              </Link>
+            )}
+          </Stack>
+
+          {generatedFile !== undefined ? (
+            <>
+              <Text variant="small" className={styles.detailNote} block>{generatedFile.fileName}</Text>
+              <iframe
+                className={styles.quoteFrame}
+                src={buildExcelOnlineUrl(webUrl, generatedFile, 'embedview')}
+                title={`Quotation ${generatedFile.fileName}`}
+              />
+            </>
+          ) : (
+            <Text variant="small" className={styles.detailNote} block>
+              {generated.error !== undefined
+                ? `The generated quotations library could not be read: ${generated.error}`
+                : detailBusy
+                  ? 'Looking for the generated workbook...'
+                  : 'No workbook has been generated for this quotation yet.'}
+            </Text>
+          )}
+        </div>
+
+        <div className={styles.detailBlock}>
+          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+            <Text variant="mediumPlus" className={styles.detailHeading}>Quotation details</Text>
+            {detailBusy && <Spinner size={SpinnerSize.xSmall} />}
+          </Stack>
+
+          {!detailBusy && detail === undefined && (
+            <Text variant="small" className={styles.detailNote} block>
+              The full record could not be read. The fields above still save.
+            </Text>
+          )}
+
+          {detail !== undefined && detailFields.map((field: IDashboardField) => {
+            const value: string = formatFieldValue(field, detail);
+            return (
+              <div key={field.internalName} className={styles.detailRow}>
+                <Text variant="small" className={styles.detailLabel}>{field.title}</Text>
+                <Text variant="small" className={styles.detailValue}>
+                  {value === '' ? '-' : value}
+                </Text>
+              </div>
+            );
+          })}
+
+          {detail !== undefined && detailFields.length === 0 && (
+            <Text variant="small" className={styles.detailNote} block>
+              This list has no further columns beyond the ones above.
+            </Text>
+          )}
+
+          {quoteHref !== undefined && (
+            <Link href={quoteHref} target="_blank" className={styles.detailLink}>
+              Open in SharePoint to edit every field
+            </Link>
+          )}
+        </div>
 
         {!LOCK_FINAL_STATUSES && (
           <Text variant="small" className={styles.panelHint} block>

@@ -19,6 +19,8 @@ declare interface IManagerMasterWebPartStrings {
   QuotationStatusFieldDescription: string;
   AmountFieldLabel: string;
   RemarksFieldLabel: string;
+  QuotationPageUrlFieldLabel: string;
+  QuotationPageUrlFieldDescription: string;
   OptionalFieldDescription: string;
   LeadLinkFieldLabel: string;
   LeadLinkFieldDescription: string;
